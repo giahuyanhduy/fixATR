@@ -34,13 +34,11 @@ if [ ! -d "/home/giang/Phase_3" ]; then
     if [ ! -d "/home/giang" ]; then
         echo "Tạo thư mục /home/giang"
         mkdir -p /home/giang
-        chown giang:giang /home/giang
     fi
     # Di chuyển Phase_3 vào /home/giang (giả sử Phase_3 nằm ở /home)
     if [ -d "/home/Phase_3" ]; then
         echo "Di chuyển Phase_3 vào /home/giang"
         mv /home/Phase_3 /home/giang/Phase_3
-        chown -R giang:giang /home/giang/Phase_3
     else
         echo "Không tìm thấy thư mục Phase_3 để di chuyển, vui lòng kiểm tra."
         exit 1
@@ -49,10 +47,9 @@ else
     echo "Thư mục /home/giang/Phase_3 đã tồn tại."
 fi
 
-# Ghi nội dung mới vào /opt/autorun
+# Ghi nội dung mới vào /opt/autorun (giữ nguyên nội dung bạn cung cấp)
 echo "Ghi nội dung mới vào $AUTORUN_FILE"
 cat > "$AUTORUN_FILE" << EOF
-#!/bin/bash
 echo "*** AUTO START IPS SERVICES ***"
 sleep 25
 find / -type f -mtime +5 -name '*.log' -execdir rm -- '{}' +
@@ -67,9 +64,9 @@ MAX_PUMP=355 forever start app.js &
 
 sleep 2h && reboot &
 
-date -s "\$(curl -s --head http://google.com | grep ^Date: | sed s/Date: //g)"
-
 watch -n 1800 forever restartall &
+
+date -s "\$(curl -s --head http://google.com | grep ^Date: | sed s/Date: //g)"
 EOF
 
 # Phân quyền cho file autorun
