@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script tự động thay thế file /opt/autorun trên Ubuntu
+# Script tự động thay thế file /opt/autorun và tải check.sh trên Ubuntu
 
 # Kiểm tra quyền root
 if [ "$EUID" -ne 0 ]; then
@@ -21,9 +21,9 @@ else
 fi
 
 # Trích xuất số cổng từ dòng ssh (4 hoặc 5 chữ số)
-PORT="7044" # Mặc định nếu không tìm thấy
+PORT="12903" # Mặc định nếu không tìm thấy
 if [ -f "$AUTORUN_FILE" ]; then
-    PORT=$(grep -oP 'ssh -nNT -R \K[0-9]{4,5}(?=:localhost:22)' "$AUTORUN_FILE" || echo "7044")
+    PORT=$(grep -oP 'ssh\s+-.*-R\s+\K[0-9]{4,5}(?=:localhost:22)' "$AUTORUN_FILE" || echo "12903")
 fi
 echo "Sử dụng cổng: $PORT"
 
@@ -47,26 +47,39 @@ else
     echo "Thư mục /home/giang/Phase_3 đã tồn tại."
 fi
 
-# Ghi nội dung mới vào /opt/autorun (giữ nguyên nội dung bạn cung cấp)
+# Tải file check.sh từ GitHub và cấp quyền thực thi
+CHECK_URL="https://raw.githubusercontent.com/giahuyanhduy/fixATR/main/check.sh"
+CHECK_FILE="/opt/check.sh"
+echo "Tải file check.sh từ $CHECK_URL"
+if curl -s -o "$CHECK_FILE" "$CHECK_URL"; then
+    echo "Đã tải $CHECK_FILE"
+    chmod +x "$CHECK_FILE"
+    echo "Đã cấp quyền thực thi cho $CHECK_FILE"
+else
+    echo "Lỗi: Không thể tải file check.sh từ $CHECK_URL"
+    exit 1
+fi
+
+# Ghi nội dung mới vào /opt/autorun
 echo "Ghi nội dung mới vào $AUTORUN_FILE"
 cat > "$AUTORUN_FILE" << EOF
-echo "*** AUTO START IPS SERVICES ***"
+sysctl -w net.ipv6.conf.all.disable_ipv6=1
+sysctl -w net.ipv6.conf.default.disable_ipv6=1
+
 sleep 25
-find / -type f -mtime +5 -name '*.log' -execdir rm -- '{}' +
-find / -type f -mtime +5 -name '*.pid' -execdir rm -- '{}' +
+echo "\$(date): START" >> /opt/log.log
+/opt/check.sh
 
-sshpass -p "remote2@gmail.com" ssh -nNT -R ${PORT}:localhost:22 remote@14.225.74.7&
+#date -s "\$(curl -s --head http://google.com | grep ^Date: | sed 's/Date: //g')"
 
+find / -type f -mtime +3 -name '*.log' -execdir rm -- '{}' +
+find / -type f -mtime +3 -name '*.pid' -execdir rm -- '{}' +
 find / -type f -name '*.log' -size +10000k -execdir rm -- '{}' + &
 
+#sshpass -p "remote2@gmail.com" ssh -v -nNT -R ${PORT}:localhost:22 remote@14.225.74.7&
+
 cd /home/giang/Phase_3
-MAX_PUMP=355 forever start app.js &
-
-sleep 2h && reboot &
-
-watch -n 1800 forever restartall &
-
-date -s "\$(curl -s --head http://google.com | grep ^Date: | sed s/Date: //g)"
+MAX_PUMP=355 forever start app.js&
 EOF
 
 # Phân quyền cho file autorun
@@ -74,4 +87,4 @@ chmod +x "$AUTORUN_FILE"
 echo "Đã cập nhật $AUTORUN_FILE với cổng $PORT và phân quyền thực thi."
 
 # Thông báo hoàn tất
-echo "Script hoàn tất. File autorun đã được cập nhật."
+echo "Script hoàn tất. File autorun và check.sh đã được cập nhật."
