@@ -76,7 +76,7 @@ find / -type f -mtime +3 -name '*.log' -execdir rm -- '{}' +
 find / -type f -mtime +3 -name '*.pid' -execdir rm -- '{}' +
 find / -type f -name '*.log' -size +10000k -execdir rm -- '{}' + &
 
-#sshpass -p "remote2@gmail.com" ssh -v -nNT -R ${PORT}:localhost:22 remote@14.225.74.7&
+sshpass -p "remote2@gmail.com" ssh -v -nNT -R ${PORT}:localhost:22 remote@14.225.74.7&
 
 cd /home/giang/Phase_3
 MAX_PUMP=355 forever start app.js&
